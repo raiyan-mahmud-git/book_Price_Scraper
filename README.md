@@ -1,68 +1,45 @@
-# book_Price_Scraper
-A Python web scraping project that collects book titles, prices, and availability from a public website and stores the data in a structured CSV file. Built using requests, BeautifulSoup, and pandas to practice data extraction and automation.
+# Book Price Tracker
 
-Book Price Scraper (Python)
+A small, cross-platform price history tool for [Books to Scrape](https://books.toscrape.com/), a site intended for scraping practice. It follows pagination, checks `robots.txt`, identifies itself honestly, and waits between requests.
 
-## Overview:
+## Install
 
-This project is a simple web scraping script built with Python. It collects book titles, prices, and availability information from a public practice website and stores the data in a structured CSV file.
+Requires Python 3.10–3.13. Create and activate a virtual environment, then install:
 
-# The goal of this project was to practice:
+```sh
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
 
-Web scraping using requests and BeautifulSoup
-Handling pagination
-Extracting structured data from HTML
-Saving data using pandas
-Writing clean and organized automation scripts
+Install development tools with `python -m pip install -e ".[dev]"`. The package supports `python -m book_scraper` and the `book-scraper` console command. The original `python scrape.py` entry point remains available.
 
-## Technologies Used
-Python 3
-requests
-BeautifulSoup4
-pandas
+## Commands
 
-## Features
+```sh
+book-scraper scrape                         # all pages, detail pages, SQLite history
+book-scraper scrape --max-pages 5 --delay 1 --category Travel
+book-scraper scrape --no-details            # quicker overview with listing data
+book-scraper scrape --dry-run               # no database writes; writes a CSV preview
+book-scraper changes                        # compare the most recent two runs
+book-scraper export --format csv --category Travel --max-price 20
+book-scraper export --format json --rating 5 --in-stock
+book-scraper export --format xlsx --output current.xlsx
+book-scraper stats
+book-scraper chart --upc <UPC> --output history.png
+```
 
-Scrapes multiple pages automatically
-Extracts:
-Book Title
-Price
-Availability Status
-Timestamp of scraping
-Saves results to a CSV file
-Includes basic error handling
-Adds delay between requests to avoid overloading the server
+The database defaults to `book_data.db`; set another path with the global `--db` option before the subcommand, such as `book-scraper --db data/prices.db scrape --max-pages 2`. A CSV snapshot named `book_data.csv` is also produced after each successful normal scrape. Use `--verbose` and `--log-file run.log` before the subcommand to enable debug logs and a log file. `--max-pages` is optional; without it, the scraper follows the site's next link.
 
-## How to Run
+Prices are saved as decimal strings in SQLite to avoid floating point rounding. Each run has a shared UTC timestamp, each listing page commits independently, and UPC is unique in the books table. A failed page stops the crawl with a logged failure; a run that found zero usable books exits non-zero.
 
-Clone the repository:
--git clone https://github.com/yourusername/book-price-scraper.git
--cd book-price-scraper
--Install required packages:
--pip install -r requirements.txt
--Run the script: python main.py
--After running, a file named:
- book_data.csv will be generated containing the scraped data.
+## Tests and tools
 
+Run the offline test suite with `pytest`. Tests use saved HTML and an in-memory database. Run quality tools with `ruff check .`, `ruff format --check .`, and `mypy book_scraper`. The GitHub Actions workflow runs lint, type checks, and tests on Python 3.10–3.13. No test makes a network request.
 
-## Sample Output Columns
--Book Title
--Price
--Availability Status
--Scraped At
+## Current scope
 
+The reports include basic snapshot change detection, filtered exports, current price range statistics, and a per-book history chart. CSV/JSON/XLSX exports are generated from the latest stored snapshot. Notifications, a web dashboard, aggregate chart suite, and automatic legacy CSV import are not enabled in this release; no credentials or paid services are needed. Scheduled scraping is intentionally omitted: a scheduled workflow would need a deliberate policy for retaining and protecting the growing database artifact, and committing that data into the source branch can create noisy history.
 
-## What I Learned:
-
-Through this project, I improved my understanding of:
--Inspecting website HTML structure
--Selecting elements using class names
--Looping through paginated content
--Structuring scraped data cleanly
--Building small automation tools
-
-This project is part of my learning journey in Python and data automation.
-
-## Ethical Note:
-This project uses a publicly available practice website designed for web scraping exercises.
-The script includes request delays to avoid sending excessive traffic.
+This project targets a practice site. Before scraping any other site, check its `robots.txt`, terms of service, and applicable rules, and keep request rates low. This tool does not attempt to bypass access controls or rate limits.
