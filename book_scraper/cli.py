@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .alerts import evaluate_watchlist
 from .config import load_config
-from .reports import changes, chart_history
+from .reports import changes, chart_aggregate, chart_history, format_stats, get_stats
 from .scraper import crawl
 from .storage import Store
 
@@ -41,9 +41,17 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("changes")
     sub.add_parser("stats")
 
-    chart = sub.add_parser("chart")
-    chart.add_argument("--upc", required=True)
-    chart.add_argument("--output", default="price_history.png")
+    chart = sub.add_parser("chart", help="Generate price history or aggregate charts")
+    chart.add_argument("--upc", help="Book UPC identifier for single-book price history chart")
+    chart.add_argument(
+        "--kind",
+        choices=["category-avg", "rating-vs-price", "price-changes", "stock"],
+        help="Aggregate chart kind",
+    )
+    chart.add_argument("--output", default="price_history.png", help="Output image file path")
+
+    import_csv_parser = sub.add_parser("import-csv", help="Import legacy book_data.csv into database")
+    import_csv_parser.add_argument("path", help="Path to CSV file to import")
 
     watch = sub.add_parser("watch", help="Manage price alerts and watchlist")
     watch_sub = watch.add_subparsers(dest="watch_action")
@@ -188,17 +196,35 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "stats":
             store = Store(db_path)
             try:
-                rows = store.all_latest()
-                logging.info("Books tracked: %d", len(rows))
-                if rows:
-                    prices = [float(r["price"]) for r in rows]
-                    logging.info("Current price range: %.2f to %.2f", min(prices), max(prices))
+                stats_data = get_stats(store)
+                print(format_stats(stats_data))
+                logging.info("Books tracked: %d", stats_data["total_books"])
+                if stats_data["total_books"]:
+                    logging.info("Current price range: %.2f to %.2f", stats_data["price_min"], stats_data["price_max"])
             finally:
                 store.close()
         elif args.command == "chart":
             store = Store(db_path)
             try:
-                logging.info("Saved chart to %s", chart_history(store, args.upc, args.output))
+                if getattr(args, "kind", None):
+                    out_name = args.output if args.output != "price_history.png" else f"{args.kind}.png"
+                    path = chart_aggregate(store, args.kind, out_name)
+                    logging.info("Saved chart to %s", path)
+                    print(f"Saved {args.kind} chart to {path}")
+                elif getattr(args, "upc", None):
+                    path = chart_history(store, args.upc, args.output)
+                    logging.info("Saved chart to %s", path)
+                    print(f"Saved price history chart to {path}")
+                else:
+                    raise ValueError("chart requires either --upc <UPC> or --kind <kind>")
+            finally:
+                store.close()
+        elif args.command == "import-csv":
+            store = Store(db_path)
+            try:
+                count = store.import_csv(args.path)
+                logging.info("Imported %d records from %s", count, args.path)
+                print(f"Successfully imported {count} records from {args.path}")
             finally:
                 store.close()
         return 0

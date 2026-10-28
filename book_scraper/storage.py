@@ -179,6 +179,80 @@ class Store:
             raise ValueError(f"Unsupported export format: {fmt}")
         return path
 
+    def import_csv(self, path: str | Path) -> int:
+        """Import legacy book_data.csv into books and price_history without duplicates."""
+        import csv
+        from datetime import datetime, timezone
+
+        file_path = Path(path)
+        if not file_path.is_file():
+            raise FileNotFoundError(f"CSV file not found: {path}")
+
+        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        imported = 0
+
+        with file_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            with self.db:
+                for row in reader:
+                    upc = (row.get("upc") or "").strip()
+                    if not upc:
+                        continue
+                    title = (row.get("title") or upc).strip()
+                    raw_price = (
+                        (row.get("price") or "0.00")
+                        .replace("Â", "")
+                        .replace("£", "")
+                        .replace("$", "")
+                        .replace("€", "")
+                        .strip()
+                    )
+                    try:
+                        price = str(Decimal(raw_price))
+                    except Exception:
+                        continue
+                    currency = (row.get("currency") or "GBP").strip()
+                    raw_stock = str(row.get("in_stock", "true")).lower()
+                    in_stock = 1 if raw_stock in ("true", "1", "yes", "in stock") else 0
+                    scraped_at = (row.get("scraped_at") or now).strip()
+
+                    self.db.execute(
+                        """
+                        INSERT INTO books(upc, title, currency, product_url, image_url, category, description,
+                                          rating, stock_quantity, number_of_reviews, tax)
+                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(upc) DO UPDATE SET
+                            title = excluded.title,
+                            currency = excluded.currency
+                        """,
+                        (
+                            upc,
+                            title,
+                            currency,
+                            row.get("product_url") or f"https://books.toscrape.com/catalogue/{upc}.html",
+                            row.get("image_url") or "",
+                            row.get("category") or "",
+                            row.get("description") or "",
+                            int(row.get("rating") or 1),
+                            int(row.get("stock_quantity") or 0),
+                            int(row.get("number_of_reviews") or 0),
+                            str(row.get("tax") or "0.00"),
+                        ),
+                    )
+                    book_id = self.db.execute("SELECT id FROM books WHERE upc = ?", (upc,)).fetchone()[0]
+
+                    existing = self.db.execute(
+                        "SELECT 1 FROM price_history WHERE book_id = ? AND price = ? AND scraped_at = ?",
+                        (book_id, price, scraped_at),
+                    ).fetchone()
+                    if not existing:
+                        self.db.execute(
+                            "INSERT INTO price_history(book_id, price, in_stock, scraped_at) VALUES(?, ?, ?, ?)",
+                            (book_id, price, in_stock, scraped_at),
+                        )
+                        imported += 1
+        return imported
+
     # Watchlist methods
     def add_watch(
         self,
