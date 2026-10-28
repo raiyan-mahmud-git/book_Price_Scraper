@@ -5,9 +5,16 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.py[cod]
+*.egg-info/
+.coverage
+htmlcov/
+coverage.xml
 *.db
 *.sqlite*
 book_data.csv
 book_data.json
 book_data.xlsx
 *.png
+.cache/
+book-scraper.local.toml
+
