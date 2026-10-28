@@ -1,0 +1,12 @@
+# Configuration for Book Price Tracker
+[scraper]
+delay = 1.0
+retries = 3
+max_backoff = 60.0
+no_cache = false
+
+[database]
+path = "book_data.db"
+
+[export]
+default_format = "csv"
