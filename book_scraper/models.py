@@ -1,4 +1,5 @@
 """Validated data models used by the scraper and database."""
+
 from dataclasses import dataclass
 from decimal import Decimal
 
