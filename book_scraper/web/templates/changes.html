@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Recent Changes - Book Price Tracker{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 1.5rem;">Recent Snapshot Changes</h1>
+
+<div class="grid">
+  <div class="card">
+    <h3 style="color: var(--success);">📈 Price Increases ({{ chg.increases|length }})</h3>
+    <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.9rem;">
+      {% for item in chg.increases %}
+        <li><code>{{ item[0] }}</code>: £{{ item[1] }} → <strong>£{{ item[2] }}</strong></li>
+      {% else %}
+        <li style="color: var(--text-muted);">No increases between last two runs.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 style="color: var(--danger);">📉 Price Drops ({{ chg.drops|length }})</h3>
+    <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.9rem;">
+      {% for item in chg.drops %}
+        <li><code>{{ item[0] }}</code>: £{{ item[1] }} → <strong>£{{ item[2] }}</strong></li>
+      {% else %}
+        <li style="color: var(--text-muted);">No price drops between last two runs.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3>🆕 New Books ({{ chg.new|length }})</h3>
+    <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.9rem;">
+      {% for upc in chg.new %}
+        <li><code>{{ upc }}</code></li>
+      {% else %}
+        <li style="color: var(--text-muted);">No new books added.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>📦 Back In Stock ({{ chg.back_in_stock|length }})</h3>
+    <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.9rem;">
+      {% for upc in chg.back_in_stock %}
+        <li><code>{{ upc }}</code></li>
+      {% else %}
+        <li style="color: var(--text-muted);">No inventory status changes.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

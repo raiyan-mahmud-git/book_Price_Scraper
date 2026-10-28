@@ -63,6 +63,10 @@ def main(argv: list[str] | None = None) -> int:
     watch_remove = watch_sub.add_parser("remove", help="Remove a book from watchlist")
     watch_remove.add_argument("--upc", required=True, help="Book UPC identifier")
 
+    serve = sub.add_parser("serve", help="Start web dashboard")
+    serve.add_argument("--port", type=int, default=8000, help="Port to bind (default: 8000)")
+    serve.add_argument("--host", default="127.0.0.1", help="Host interface to bind (default: 127.0.0.1)")
+
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -227,6 +231,18 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Successfully imported {count} records from {args.path}")
             finally:
                 store.close()
+        elif args.command == "serve":
+            try:
+                import uvicorn
+
+                from .web.app import create_app
+            except ImportError:
+                logging.error('Web dashboard dependencies not installed. Install with: pip install -e ".[web]"')
+                print('Web dashboard dependencies not installed. Install with: pip install -e ".[web]"')
+                return 1
+            app = create_app(db_path)
+            print(f"Starting Book Price Tracker dashboard at http://{args.host}:{args.port}")
+            uvicorn.run(app, host=args.host, port=args.port)
         return 0
     except Exception as exc:
         logging.error("Run failed: %s", exc)

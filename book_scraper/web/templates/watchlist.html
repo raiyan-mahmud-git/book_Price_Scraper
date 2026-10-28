@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Watchlist - Book Price Tracker{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 1.5rem;">Price Watchlist</h1>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>UPC</th>
+        <th>Title</th>
+        <th>Target Below</th>
+        <th>Drop % Threshold</th>
+        <th>Latest Price</th>
+        <th>Last Alerted</th>
+        <th>Alert Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td><code>{{ item.upc }}</code></td>
+        <td><strong>{{ item.title }}</strong></td>
+        <td>{% if item.below_price %}£{{ "%.2f"|format(item.below_price|float) }}{% else %}-{% endif %}</td>
+        <td>{% if item.drop_percent %}{{ item.drop_percent }}%{% else %}-{% endif %}</td>
+        <td>{% if item.latest_price %}£{{ "%.2f"|format(item.latest_price|float) }}{% else %}No data{% endif %}</td>
+        <td>{% if item.last_alerted_price %}£{{ "%.2f"|format(item.last_alerted_price|float) }}{% else %}Never{% endif %}</td>
+        <td>
+          {% if item.triggered %}
+            <span class="badge badge-success">Target Met!</span>
+          {% else %}
+            <span class="badge" style="background: #e2e8f0; color: #475569;">Watching</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+          No books on the watchlist yet. Use <code>book-scraper watch add --upc &lt;UPC&gt; --below &lt;PRICE&gt;</code> to watch books!
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

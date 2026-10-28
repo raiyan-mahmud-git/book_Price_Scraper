@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }} - Price History{% endblock %}
+{% block content %}
+<a href="/books" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">← Back to Books</a>
+<h1 style="margin: 0.5rem 0 1.5rem 0;">{{ book.title }}</h1>
+
+<div class="grid">
+  <div class="card" style="margin-bottom: 0;">
+    <h2>Book Details</h2>
+    <table style="margin-top: 0.5rem;">
+      <tr><th>UPC</th><td><code>{{ book.upc }}</code></td></tr>
+      <tr><th>Category</th><td>{{ book.category or "None" }}</td></tr>
+      <tr><th>Latest Price</th><td><strong>£{{ "%.2f"|format(book.price|float) }}</strong></td></tr>
+      <tr><th>Rating</th><td>{{ "★" * book.rating }} ({{ book.rating }}/5)</td></tr>
+      <tr><th>Status</th><td>
+        {% if book.in_stock %}
+          <span class="badge badge-success">In Stock</span> ({{ book.stock_quantity }} available)
+        {% else %}
+          <span class="badge badge-danger">Out of Stock</span>
+        {% endif %}
+      </td></tr>
+      <tr><th>Reviews</th><td>{{ book.number_of_reviews }}</td></tr>
+      <tr><th>Product URL</th><td><a href="{{ book.product_url }}" target="_blank" style="color: var(--primary);">View on site ↗</a></td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="margin-bottom: 0; text-align: center;">
+    <h2>Price History Chart</h2>
+    <img src="/api/chart/{{ book.upc }}" alt="Price History Chart" style="max-width: 100%; height: auto; border-radius: 6px; margin-top: 1rem; border: 1px solid var(--border);">
+  </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+  <h2>Recorded Price Snapshots</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Scraped At (UTC)</th>
+        <th>Price</th>
+        <th>Stock Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for point in history %}
+      <tr>
+        <td>{{ point.scraped_at }}</td>
+        <td><strong>£{{ "%.2f"|format(point.price|float) }}</strong></td>
+        <td>
+          {% if point.in_stock %}
+            <span class="badge badge-success">In Stock</span>
+          {% else %}
+            <span class="badge badge-danger">Out of Stock</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

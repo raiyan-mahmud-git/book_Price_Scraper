@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Overview - Book Price Tracker{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 1.5rem;">System Overview</h1>
+
+<div class="grid">
+  <div class="stat-card">
+    <div class="stat-val">{{ total_books }}</div>
+    <div class="stat-lbl">Total Books</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color: var(--success);">{{ in_stock }}</div>
+    <div class="stat-lbl">In Stock</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color: var(--danger);">{{ out_of_stock }}</div>
+    <div class="stat-lbl">Out of Stock</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val">{{ categories_count }}</div>
+    <div class="stat-lbl">Categories</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Crawl Status</h2>
+  <p style="margin-top: 0.5rem; color: var(--text-muted);">
+    <strong>Last Scrape Run:</strong> {{ last_run or "Never" }}
+  </p>
+  <p style="margin-top: 0.25rem; color: var(--text-muted);">
+    <strong>Total Historical Snapshots:</strong> {{ snapshots_count }}
+  </p>
+  {% if price_range %}
+  <p style="margin-top: 0.25rem; color: var(--text-muted);">
+    <strong>Current Price Range:</strong> £{{ "%.2f"|format(price_range[0]) }} to £{{ "%.2f"|format(price_range[1]) }}
+  </p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Quick Navigation</h2>
+  <ul style="margin: 0.75rem 0 0 1.25rem; color: var(--primary);">
+    <li><a href="/books">Browse all books with filters</a></li>
+    <li><a href="/changes">View recent price and inventory changes</a></li>
+    <li><a href="/watchlist">Check alert watchlist status</a></li>
+  </ul>
+</div>
+{% endblock %}
