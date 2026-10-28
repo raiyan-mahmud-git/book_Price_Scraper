@@ -1,0 +1,2 @@
+[console_scripts]
+book-scraper = book_scraper.cli:main
