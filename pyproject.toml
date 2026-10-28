@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "book-price-tracker"
-version = "1.0.0"
+version = "1.1.0"
 description = "A polite Books to Scrape price history tracker"
 requires-python = ">=3.10"
 dynamic = ["dependencies"]
@@ -21,6 +21,7 @@ dependencies = {file = ["requirements.txt"]}
 [project.optional-dependencies]
 dev = [
     "pytest==8.3.3",
+    "pytest-cov==6.0.0",
     "responses==0.25.3",
     "ruff==0.7.1",
     "mypy==1.13.0",
@@ -36,6 +37,7 @@ web = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=book_scraper --cov-fail-under=80"
 
 [tool.ruff]
 line-length = 120
