@@ -2,8 +2,10 @@
 
 import argparse
 import logging
+from decimal import Decimal
 from pathlib import Path
 
+from .alerts import evaluate_watchlist
 from .config import load_config
 from .reports import changes, chart_history
 from .scraper import crawl
@@ -42,6 +44,16 @@ def main(argv: list[str] | None = None) -> int:
     chart = sub.add_parser("chart")
     chart.add_argument("--upc", required=True)
     chart.add_argument("--output", default="price_history.png")
+
+    watch = sub.add_parser("watch", help="Manage price alerts and watchlist")
+    watch_sub = watch.add_subparsers(dest="watch_action")
+    watch_add = watch_sub.add_parser("add", help="Add or update a watched book")
+    watch_add.add_argument("--upc", required=True, help="Book UPC identifier")
+    watch_add.add_argument("--below", type=float, help="Alert when price is below or equal to this threshold")
+    watch_add.add_argument("--drop-percent", type=float, help="Alert when price drops by this percentage")
+    watch_sub.add_parser("list", help="List all watched books")
+    watch_remove = watch_sub.add_parser("remove", help="Remove a book from watchlist")
+    watch_remove.add_argument("--upc", required=True, help="Book UPC identifier")
 
     args = parser.parse_args(argv)
     logging.basicConfig(
@@ -103,13 +115,50 @@ def main(argv: list[str] | None = None) -> int:
                         for b in books
                     )
                 logging.info("Dry run results written to %s", path)
+                # In dry-run mode, also check watchlist if database exists
+                if Path(db_path).exists():
+                    store = Store(db_path)
+                    try:
+                        evaluate_watchlist(store, dry_run=True, config=config)
+                    finally:
+                        store.close()
             else:
                 store = Store(db_path)
                 try:
                     store.export("csv", "book_data.csv")
+                    evaluate_watchlist(store, dry_run=False, config=config)
                 finally:
                     store.close()
                 logging.info("Scrape complete; CSV exported to book_data.csv")
+        elif args.command == "watch":
+            store = Store(db_path)
+            try:
+                if args.watch_action == "add":
+                    below = Decimal(str(args.below)) if args.below is not None else None
+                    store.add_watch(args.upc, below_price=below, drop_percent=args.drop_percent)
+                    print(f"Added watch for UPC {args.upc} (below={below}, drop_percent={args.drop_percent})")
+                elif args.watch_action == "remove":
+                    removed = store.remove_watch(args.upc)
+                    if removed:
+                        print(f"Removed watch for UPC {args.upc}")
+                    else:
+                        print(f"UPC {args.upc} not found in watchlist")
+                elif args.watch_action == "list":
+                    items = store.get_watchlist()
+                    if not items:
+                        print("Watchlist is empty.")
+                    else:
+                        print(f"{'UPC':<20} {'Target Price':<14} {'Drop %':<10} {'Last Alerted':<14} {'Created At'}")
+                        print("-" * 75)
+                        for it in items:
+                            below_val = f"{Decimal(it['below_price']):.2f}" if it["below_price"] is not None else "-"
+                            drop_val = f"{it['drop_percent']}%" if it["drop_percent"] is not None else "-"
+                            alerted_val = it["last_alerted_price"] or "-"
+                            print(
+                                f"{it['upc']:<20} {below_val:<14} {drop_val:<10} {alerted_val:<14} {it['created_at']}"
+                            )
+            finally:
+                store.close()
         elif args.command == "export":
             fmt = args.format or config.get("export", {}).get("default_format", "csv")
             category = args.category or config.get("export", {}).get("category")
