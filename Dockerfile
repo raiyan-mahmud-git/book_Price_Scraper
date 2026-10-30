@@ -6,23 +6,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies if needed and create non-root user
+# Install system dependencies and create non-root user
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/* \
     && useradd -m -u 1000 appuser \
     && mkdir -p /data && chown -R appuser:appuser /data /app
 
-# Copy dependency specifications first for caching
+# Copy dependency specs + full source so editable install can find the package
 COPY pyproject.toml requirements.txt /app/
-
-# Install dependencies including web dashboard extra
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir -e ".[web]"
-
-# Copy source code
 COPY book_scraper/ /app/book_scraper/
 COPY book-scraper.toml scrape.py README.md /app/
+
+# Install runtime deps then the package itself (with web extra)
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -e ".[web]"
 
 RUN chown -R appuser:appuser /app
 
@@ -33,4 +31,4 @@ USER appuser
 EXPOSE 8000
 
 ENTRYPOINT ["book-scraper"]
-CMD ["--help"]
+CMD ["--db", "/data/book_data.db", "serve", "--host", "0.0.0.0", "--port", "8000"]

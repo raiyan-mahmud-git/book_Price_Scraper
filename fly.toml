@@ -1,0 +1,33 @@
+app = "book-price-tracker"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[build.args]
+  # pass nothing – just ensures build section is explicit
+
+[env]
+  BOOK_SCRAPER_DB = "/data/book_data.db"
+
+[[mounts]]
+  source      = "tracker_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https   = true
+  auto_stop_machines  = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type       = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
