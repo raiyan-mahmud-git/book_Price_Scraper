@@ -4,9 +4,6 @@ primary_region = "sin"
 [build]
   dockerfile = "Dockerfile"
 
-[build.args]
-  # pass nothing – just ensures build section is explicit
-
 [env]
   BOOK_SCRAPER_DB = "/data/book_data.db"
 

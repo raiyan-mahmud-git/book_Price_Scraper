@@ -19,7 +19,6 @@ def get_schema_version(conn: sqlite3.Connection) -> int:
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'"
     ).fetchone()
     if not has_version_table:
-        # Check if books table exists (legacy unversioned database)
         has_books = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='books'").fetchone()
         return 1 if has_books else 0
     row = conn.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1").fetchone()
@@ -94,7 +93,6 @@ class Store:
         migrate_database(self.db)
 
     def save_page(self, books: list[Book], scraped_at: str) -> None:
-        # One commit per listing page lets an interrupted crawl keep completed work.
         with self.db:
             for book in books:
                 book.validate()
@@ -253,7 +251,6 @@ class Store:
                         imported += 1
         return imported
 
-    # Watchlist methods
     def add_watch(
         self,
         upc: str,

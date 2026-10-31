@@ -57,7 +57,6 @@ def get_stats(store: Store) -> dict[str, Any]:
     in_stock_cnt = sum(1 for r in rows if r["in_stock"])
     out_of_stock_cnt = total - in_stock_cnt
 
-    # Distribution buckets
     buckets = {"< £10": 0, "£10 - £20": 0, "£20 - £30": 0, "£30 - £40": 0, "£40 - £50": 0, "£50+": 0}
     for p in prices:
         if p < 10:
@@ -73,14 +72,12 @@ def get_stats(store: Store) -> dict[str, Any]:
         else:
             buckets["£50+"] += 1
 
-    # Counts per category
     cat_counts: dict[str, int] = {}
     for r in rows:
         cat = r["category"] or "Uncategorized"
         cat_counts[cat] = cat_counts.get(cat, 0) + 1
     sorted_cats = dict(sorted(cat_counts.items(), key=lambda kv: kv[1], reverse=True))
 
-    # Price changes between last 2 runs
     chg = changes(store)
     increases = []
     for upc, before, after in chg["increases"]:

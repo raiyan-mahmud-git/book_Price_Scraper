@@ -1,4 +1,3 @@
-# Configuration for Book Price Tracker
 [scraper]
 delay = 1.0
 retries = 3

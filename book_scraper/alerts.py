@@ -130,7 +130,6 @@ def evaluate_watchlist(
             continue
         book_id, title, currency = book_row["id"], book_row["title"], book_row["currency"] or "GBP"
 
-        # Get latest price points (up to 2 for drop percent calculation)
         history = store.db.execute(
             "SELECT price, scraped_at FROM price_history WHERE book_id = ? ORDER BY id DESC LIMIT 2",
             (book_id,),
@@ -141,18 +140,15 @@ def evaluate_watchlist(
         current_price = Decimal(history[0]["price"])
         prev_price = Decimal(history[1]["price"]) if len(history) > 1 else None
 
-        # Check duplicate suppression: do not re-alert for same price
         if item["last_alerted_price"] is not None and Decimal(item["last_alerted_price"]) == current_price:
             continue
 
         reasons = []
-        # Check below price
         if item["below_price"] is not None:
             target = Decimal(item["below_price"])
             if current_price <= target:
                 reasons.append(f"Price {currency} {current_price:.2f} <= target {currency} {target:.2f}")
 
-        # Check drop percent
         if item["drop_percent"] is not None and prev_price is not None and prev_price > 0:
             drop_pct = float((prev_price - current_price) / prev_price * Decimal(100))
             if drop_pct >= float(item["drop_percent"]):

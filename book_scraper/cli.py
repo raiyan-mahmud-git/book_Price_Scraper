@@ -127,7 +127,6 @@ def main(argv: list[str] | None = None) -> int:
                         for b in books
                     )
                 logging.info("Dry run results written to %s", path)
-                # In dry-run mode, also check watchlist if database exists
                 if Path(db_path).exists():
                     store = Store(db_path)
                     try:

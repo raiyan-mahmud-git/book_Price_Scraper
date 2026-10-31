@@ -65,7 +65,6 @@ def create_app(db_path: str = "book_data.db") -> FastAPI:
             rows = store.all_latest()
             all_cats = sorted({r["category"] for r in rows if r["category"]})
 
-            # Filter
             filtered = rows
             if q:
                 query_lower = q.strip().lower()

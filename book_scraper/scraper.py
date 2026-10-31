@@ -36,7 +36,6 @@ def crawl(
             page_count += 1
             try:
                 rows, next_url = parse_listing(client.get(page_url), page_url)
-                # Detail pages expose stable UPC identifiers and the remaining fields.
                 current: list[Book] = []
                 for row in rows:
                     try:
@@ -74,7 +73,6 @@ def crawl(
             except (RuntimeError, ValueError) as exc:
                 failed += 1
                 LOG.error("Page %d failed: %s", page_count, exc)
-                # Stop on an inaccessible listing page; later pages may be linked from it.
                 break
     finally:
         if store:

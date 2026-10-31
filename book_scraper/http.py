@@ -98,7 +98,6 @@ class SiteClient:
 
                 resp_headers = getattr(response, "headers", {})
 
-                # 304 Not Modified
                 if response.status_code == 304 and cached_content is not None:
                     LOG.debug("Cached page unchanged (304): %s", url)
                     return cached_content
@@ -120,7 +119,6 @@ class SiteClient:
                 if attempt == self.retries:
                     raise RuntimeError(f"Could not fetch {url} after {self.retries + 1} attempts: {exc}") from exc
 
-                # Check Retry-After
                 resp = getattr(exc, "response", None)
                 r_headers = getattr(resp, "headers", {}) if resp else {}
                 retry_after = parse_retry_after(r_headers.get("Retry-After"))
